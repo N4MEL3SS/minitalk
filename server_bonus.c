@@ -1,6 +1,25 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   server_bonus.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: celadia <celadia@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/02/01 15:59:29 by celadia           #+#    #+#             */
+/*   Updated: 2022/02/01 15:59:29 by celadia          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
+
+void	close_server(int sig)
+{
+	(void)sig;
+	write(1, "\nThe server is stopped.\n", 24);
+	exit(EXIT_SUCCESS);
+}
 
 void	print_pid(int pid)
 {
@@ -17,32 +36,25 @@ void	print_pid(int pid)
 		pid %= i;
 		i /= 10;
 	}
+	write(1, "\n", 1);
 }
 
 static void	get_msg(int sig, siginfo_t *info, void *ucontext)
 {
-	static unsigned char 	byte;
+	static unsigned char	byte;
 	static int				bit;
 
 	(void)ucontext;
 	if (sig == SIGUSR1)
-	{
 		byte += 1 << (7 - bit);
-	}
 	if (++bit == 8)
 	{
 		write(1, &byte, 1);
-		kill(info->si_pid, SIGUSR2);
+		if (byte == '\n')
+			kill(info->si_pid, SIGUSR2);
 		bit = 0;
 		byte = 0;
 	}
-}
-
-void	close_server(int sig)
-{
-	(void)sig;
-	write(1, "\nClose\n", 7);
-	exit(EXIT_SUCCESS);
 }
 
 int	main(void)
@@ -62,7 +74,6 @@ int	main(void)
 		|| sigaction(SIGUSR2, &sa, NULL) == -1)
 		return (-1);
 	print_pid(getpid());
-	write(1, "\n", 1);
 	while (1)
 		pause();
 	return (0);
